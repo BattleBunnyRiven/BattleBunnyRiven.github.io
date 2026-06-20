@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kali MCP + Claude Desktop | Writeup</title>
+
+  <!-- Shared blog CSS / wallpaper -->
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+
+  <style>
+    .writeup-page { width:100%; min-height:100vh; padding:80px 20px; display:flex; justify-content:center; }
+    .writeup-shell { width:min(1000px,95vw); border-radius:24px; border:1px solid rgba(143,0,255,.35); background:rgba(8,0,18,.82); backdrop-filter:blur(14px); box-shadow:0 0 40px rgba(143,0,255,.25); overflow:hidden; }
+    .writeup-header { padding:40px; border-bottom:1px solid rgba(143,0,255,.25); }
+    .writeup-header h1 { margin:0; font-size:2.5rem; }
+    .writeup-subtitle { margin-top:12px; opacity:.8; line-height:1.7; }
+    .tags { display:flex; gap:10px; flex-wrap:wrap; margin-top:20px; }
+    .tag { padding:6px 12px; border-radius:999px; border:1px solid rgba(143,0,255,.35); background:rgba(143,0,255,.12); font-size:.85rem; }
+    .writeup-content { padding:40px; }
+    .writeup-content h2 { margin-top:52px; margin-bottom:18px; color:#fff; text-shadow:0 0 14px rgba(143,0,255,.6); }
+    .writeup-content h3 { margin-top:36px; color:#e6c9ff; }
+    .writeup-content p { line-height:1.85; }
+    .lead { font-size:1.05rem; opacity:.95; }
+    .text-highlight {
+      display: inline;
+      vertical-align: baseline;
+      white-space: normal;
+      color: #fff;
+      background: linear-gradient(90deg, rgba(143,0,255,.34), rgba(143,0,255,.08));
+      border: 1px solid rgba(143,0,255,.26);
+      padding: .08rem .32rem;
+      border-radius: 7px;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    body {
+      position: relative;
+      min-height: 100vh;
+      background: #05000a;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: url("../assets/img/wallpaper.jpg");
+      background-size: cover;
+      background-position: center right;
+      background-repeat: no-repeat;
+      opacity: .18;
+      z-index: -3;
+      pointer-events: none;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at center, rgba(100,0,180,.16), rgba(0,0,0,.78));
+      z-index: -2;
+      pointer-events: none;
+    }
+    .callout, blockquote { margin:24px 0; padding:18px 20px; border-left:4px solid #9d28ff; background:rgba(143,0,255,.12); border-radius:14px; line-height:1.8; }
+    .writeup-content ul { padding-left:1.5rem; margin:1rem 0 2rem; }
+    .writeup-content li { margin-bottom:.9rem; line-height:1.8; }
+    .writeup-content li code, :not(pre) > code { background:rgba(143,0,255,.14); padding:.15rem .45rem; border-radius:8px; border:1px solid rgba(143,0,255,.25); color:#e8baff; font-family:"JetBrains Mono",monospace; }
+    .code-block { position:relative; margin:28px 0; border-radius:18px; overflow:hidden; border:1px solid rgba(143,0,255,.28); background:linear-gradient(180deg,rgba(18,6,28,.96),rgba(7,2,14,.94)); box-shadow:0 0 25px rgba(143,0,255,.12), inset 0 0 35px rgba(143,0,255,.06); }
+    .code-header { height:48px; display:flex; align-items:center; justify-content:space-between; padding:0 18px; border-bottom:1px solid rgba(255,255,255,.06); background:linear-gradient(90deg,rgba(143,0,255,.14),rgba(143,0,255,.04)); }
+    .code-title { font-size:.82rem; color:#dcb4ff; letter-spacing:.08em; text-transform:uppercase; font-family:"JetBrains Mono",monospace; }
+    .copy-btn { border:0; cursor:pointer; padding:8px 14px; border-radius:10px; color:white; background:rgba(143,0,255,.16); transition:.18s; }
+    .copy-btn:hover { background:rgba(143,0,255,.32); transform:translateY(-1px); }
+    pre[class*="language-"] { margin:0!important; padding:22px!important; overflow-x:auto; background:transparent!important; font-size:.93rem; line-height:1.8; }
+    code[class*="language-"] { font-family:"JetBrains Mono",monospace!important; white-space:pre; }
+    @media (max-width:768px) { .writeup-header,.writeup-content { padding:25px; } .writeup-header h1 { font-size:2rem; } }
+  </style>
+</head>
+<body>
+  <main class="writeup-page">
+    <div class="writeup-shell">
+      <header class="writeup-header">
+        <h1>Kali MCP + Claude Desktop</h1>
+        <p class="writeup-subtitle">Connecting Claude Desktop to a Kali Linux VMware VM through MCP and SSH.</p>
+        <div class="tags">
+          <span class="tag">Kali Linux</span>
+          <span class="tag">MCP</span>
+          <span class="tag">Claude Desktop</span>
+          <span class="tag">VMware</span>
+          <span class="tag">AI Pentest Lab</span>
+        </div>
+      </header>
+      <article class="writeup-content">
+        
+<p class="lead">
+  This guide shows how to connect <span class="text-highlight">Claude Desktop to a Kali Linux VMware VM</span>
+  through MCP, allowing the AI agent to communicate with Kali tools through SSH.
+</p>
+
+<h2>Prerequisites</h2>
+<ul>
+  <li><code>Host machine</code> Windows or macOS.</li>
+  <li><code>Claude Desktop</code> installed and logged in.</li>
+  <li><code>VMware</code> running a Kali Linux VM.</li>
+  <li><code>Troubleshooting skills</code> optional, but highly recommended.</li>
+</ul>
+
+<h2>Kali Settings VMware</h2>
+<p>Open your Kali Linux VM and update the system.</p>
+
+
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-title">bash</span>
+    <button class="copy-btn">Copy</button>
+  </div>
+  <pre class="language-bash"><code class="language-bash">sudo apt update &amp;&amp; sudo apt upgrade -y</code></pre>
+</div>
+
+
+<p>Install OpenSSH. We will use SSH to connect from the host machine to the Kali VM.</p>
+
+
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-title">bash</span>
+    <button class="copy-btn">Copy</button>
+  </div>
+  <pre class="language-bash"><code class="language-bash">sudo apt install -y openssh-server</code></pre>
+</div>
+
+
+<p>Enable and start the SSH service.</p>
+
+
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-title">bash</span>
+    <button class="copy-btn">Copy</button>
+  </div>
+  <pre class="language-bash"><code class="language-bash">sudo systemctl enable --now ssh</code></pre>
+</div>
+
+
+<p>
+  Install <code>mcp-kali-server</code>. This package allows Claude to communicate with Kali
+  and execute supported commands through the MCP bridge.
+</p>
+
+
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-title">bash</span>
+    <button class="copy-btn">Copy</button>
+  </div>
+  <pre class="language-bash"><code class="language-bash">sudo apt install -y mcp-kali-server</code></pre>
+</div>
+
+
+<p>
+  Start the Kali MCP API server. This exposes the local API on port <code>5000</code>.
+  Keep this terminal open; if you stop this process, the AI agent will lose the connection.
+</p>
+
+
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-title">bash</span>
+    <button class="copy-btn">Copy</button>
+  </div>
+  <pre class="language-bash"><code class="language-bash">&gt; kali-server-mcp
+[INFO] Starting Kali Linux Tools API Server on 127.0.0.1:5000
+ * Serving Flask app &#x27;server&#x27;
+ * Debug mode: off
+[INFO] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+2026-06-19 23:28:41,434 [INFO] Press CTRL+C to quit
+2026-06-19 23:28:47,572 [INFO] Executing command: [&#x27;which&#x27;, &#x27;nmap&#x27;]
+2026-06-19 23:28:47,573 [INFO] Executing command: [&#x27;which&#x27;, &#x27;gobuster&#x27;]
+2026-06-19 23:28:47,573 [INFO] Executing command: [&#x27;which&#x27;, &#x27;dirb&#x27;]
+2026-06-19 23:28:47,573 [INFO] Executing command: [&#x27;which&#x27;, &#x27;nikto&#x27;]
+2026-06-19 23:28:47,573 [INFO] 127.0.0.1 - - [] &quot;GET /health HTTP/1.1&quot; 200 -</code></pre>
+</div>
+
+
+<p>
+  In another terminal, test the connection by running <code>mcp-server</code>.
+  You should see a successful health check.
+</p>
+
+
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-title">bash</span>
+    <button class="copy-btn">Copy</button>
+  </div>
+  <pre class="language-bash"><code class="language-bash">mcp-server
+
+[INFO] Initialized Kali Tools Client connecting to http://localhost:5000
+[INFO] Successfully connected to Kali API server at http://localhost:5000
+[INFO] Server health status: healthy
+[WARNING] Not all essential tools are available on the Kali server
+[WARNING] Missing tools: dirb, gobuster, nikto, nmap
+[INFO] Starting MCP Kali server</code></pre>
+</div>
+
+
+<p>Install the extra tools that the MCP server can use.</p>
+
+
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-title">bash</span>
+    <button class="copy-btn">Copy</button>
+  </div>
+  <pre class="language-bash"><code class="language-bash">sudo apt install -y dirb gobuster nikto nmap enum4linux-ng hydra john metasploit-framework sqlmap wpscan wordlists</code></pre>
+</div>
+
+
+<h2>Host Desktop Settings Windows</h2>
+<p>
+  Go to <code>https://claude.ai/login</code> and download Claude Desktop before logging in.
+  Avoid the Microsoft Store version when possible, because it may reset the JSON configuration
+  you will edit later.
+</p>
+
+<p>
+  After installing Claude Desktop, log in to your account. This is required before editing the MCP connection settings.
+</p>
+
+<p>
+  By default, SSH can fail on Windows if the expected binary is not available.
+  Install Git Bash so you can use SSH from the host to Kali:
+  <code>https://git-scm.com/install/</code>.
+</p>
+
+<h3>Claude Desktop MCP Configuration</h3>
+<p>
+  In Claude Desktop, click your profile icon in the bottom-left corner and go to
+  <code>Settings</code> → <code>Developer</code> → <code>Edit config</code>.
+  Replace <code>&lt;YOUR_KALI_IP&gt;</code> with your Kali VM IP.
+</p>
+
+<p>Find your Kali IP with:</p>
+
+
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-title">bash</span>
+    <button class="copy-btn">Copy</button>
+  </div>
+  <pre class="language-bash"><code class="language-bash">ifconfig</code></pre>
+</div>
+
+
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-title">json</span>
+    <button class="copy-btn">Copy</button>
+  </div>
+  <pre class="language-json"><code class="language-json">&quot;mcpServers&quot;: {
+  &quot;mcp-kali-server&quot;: {
+    &quot;command&quot;: &quot;ssh&quot;,
+    &quot;args&quot;: [
+      &quot;kali@192.168.1.30&quot;,
+      &quot;mcp-server&quot;
+    ],
+    &quot;transport&quot;: &quot;stdio&quot;
+  }
+}</code></pre>
+</div>
+
+
+<p>
+  Your configuration file may already contain preferences. Add the MCP configuration before
+  the preferences object and make sure the JSON remains valid.
+</p>
+
+
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-title">json</span>
+    <button class="copy-btn">Copy</button>
+  </div>
+  <pre class="language-json"><code class="language-json">{
+  &quot;mcpServers&quot;: {
+    &quot;mcp-kali-server&quot;: {
+      &quot;command&quot;: &quot;C:\\Program Files\\Git\\usr\\bin\\ssh.exe&quot;,
+      &quot;args&quot;: [
+        &quot;kali@&lt;YOUR_KALI_IP&gt;&quot;,
+        &quot;mcp-server&quot;
+      ]
+    }
+  },
+  &quot;preferences&quot;: {
+    &quot;remoteToolsDeviceName&quot;: &quot;orion&quot;,
+    &quot;coworkHipaaRestricted&quot;: false,
+    &quot;coworkWebSearchEnabled&quot;: true,
+    &quot;coworkScheduledTasksEnabled&quot;: false,
+    &quot;ccdScheduledTasksEnabled&quot;: false,
+    &quot;epitaxyPrefs&quot;: {
+      &quot;starred-local-code-sessions&quot;: [],
+      &quot;starred-cowork-spaces&quot;: [],
+      &quot;starred-session-groups&quot;: [],
+      &quot;dframe-local-slice&quot;: {
+        &quot;pinnedOrder&quot;: [],
+        &quot;customGroupAssignments&quot;: {},
+        &quot;customGroupOrder&quot;: {}
+      }
+    },
+    &quot;coworkModelAutoFallbackByAccount&quot;: {
+      &quot;&lt;ID&gt;&quot;: true
+    },
+    &quot;bypassPermissionsGateByAccount&quot;: {
+      &quot;&lt;ID&gt;&quot;: false
+    }
+  },
+  &quot;coworkUserFilesPath&quot;: &quot;C:\\Users\\USER\\Claude&quot;
+}</code></pre>
+</div>
+
+
+<h3>Finding the SSH Binary Path</h3>
+<ul>
+  <li>Search for Git Bash in Windows.</li>
+  <li>Right click Git Bash and select <code>Open file location</code>.</li>
+  <li>Right click the shortcut and select <code>Open file location</code> again.</li>
+  <li>Open <code>usr</code>, then <code>bin</code>.</li>
+  <li>Search for <code>ssh.exe</code>.</li>
+  <li>Right click <code>ssh.exe</code> and select <code>Copy as path</code>.</li>
+</ul>
+
+<p>
+  Replace the command path in the JSON config. Windows paths must be escaped with double backslashes:
+  <code>\\</code>.
+</p>
+
+
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-title">json</span>
+    <button class="copy-btn">Copy</button>
+  </div>
+  <pre class="language-json"><code class="language-json">{
+  &quot;mcpServers&quot;: {
+    &quot;mcp-kali-server&quot;: {
+      &quot;command&quot;: &quot;C:\\Program Files\\Git\\usr\\bin\\ssh.exe&quot;,
+      &quot;args&quot;: [
+        &quot;-i&quot;,
+        &quot;C:\\Users\\USER\\.ssh\\key1&quot;,
+        &quot;kali@&lt;YOUR_KALI_IP&gt;&quot;,
+        &quot;mcp-server&quot;
+      ]
+    }
+  },
+  &quot;preferences&quot;: {
+    &quot;remoteToolsDeviceName&quot;: &quot;orion&quot;,
+    &quot;coworkHipaaRestricted&quot;: false,
+    &quot;coworkWebSearchEnabled&quot;: true,
+    &quot;coworkScheduledTasksEnabled&quot;: false,
+    &quot;ccdScheduledTasksEnabled&quot;: false
+  },
+  &quot;coworkUserFilesPath&quot;: &quot;C:\\Users\\USER\\Claude&quot;
+}</code></pre>
+</div>
+
+
+<h2>SSH Key Authentication</h2>
+<p>
+  Claude needs a non-interactive SSH login. Create a key pair from Git Bash.
+</p>
+
+
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-title">bash</span>
+    <button class="copy-btn">Copy</button>
+  </div>
+  <pre class="language-bash"><code class="language-bash">cd ~/.ssh &amp;&amp; ssh-keygen.exe
+
+Generating public/private ed25519 key pair.
+Enter file in which to save the key (/c/Users/USER/.ssh/id_ed25519): key1
+Enter passphrase for &quot;key1&quot; (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in key1
+Your public key has been saved in key1.pub
+The key fingerprint is:
+SHA256:MVt=====================GhM USER@HOST</code></pre>
+</div>
+
+
+<blockquote>
+  Do not set a passphrase for this key. If you do, the SSH connection will ask for the passphrase
+  every time Claude tries to connect, and the MCP startup will fail.
+</blockquote>
+
+<p>Copy the public key to your Kali VM.</p>
+
+
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-title">bash</span>
+    <button class="copy-btn">Copy</button>
+  </div>
+  <pre class="language-bash"><code class="language-bash">ssh-copy-id -i key1.pub kali@&lt;YOUR_KALI_IP&gt;</code></pre>
+</div>
+
+
+<p>Test the SSH connection with the private key. After confirming access, exit and get the key path.</p>
+
+
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-title">bash</span>
+    <button class="copy-btn">Copy</button>
+  </div>
+  <pre class="language-bash"><code class="language-bash">USER@HOST ~/.ssh
+$ ssh -i ./key1 &#x27;kali@&lt;YOUR_KALI_IP&gt;&#x27;
+Kali GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent permitted by applicable law.
+
+╭── kali
+╰── whoami
+kali
+
+╭── kali
+╰── exit
+
+$ pwd
+/c/Users/USER/.ssh</code></pre>
+</div>
+
+
+<h2>Final Claude Desktop JSON</h2>
+<p>
+  Add the private SSH key path to the Claude Desktop JSON config. Convert the Git Bash path
+  to Windows format, just like the <code>ssh.exe</code> path.
+</p>
+
+
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-title">json</span>
+    <button class="copy-btn">Copy</button>
+  </div>
+  <pre class="language-json"><code class="language-json">{
+  &quot;mcpServers&quot;: {
+    &quot;mcp-kali-server&quot;: {
+      &quot;command&quot;: &quot;C:\\Program Files\\Git\\usr\\bin\\ssh.exe&quot;,
+      &quot;args&quot;: [
+        &quot;-i&quot;,
+        &quot;C:\\Users\\USER\\.ssh\\key1&quot;,
+        &quot;-o&quot;,
+        &quot;StrictHostKeyChecking=no&quot;,
+        &quot;kali@&lt;YOUR_KALI_IP&gt;&quot;,
+        &quot;mcp-server&quot;
+      ]
+    }
+  },
+  &quot;preferences&quot;: {
+    &quot;remoteToolsDeviceName&quot;: &quot;orion&quot;,
+    &quot;coworkHipaaRestricted&quot;: false,
+    &quot;coworkWebSearchEnabled&quot;: true,
+    &quot;coworkScheduledTasksEnabled&quot;: false,
+    &quot;ccdScheduledTasksEnabled&quot;: false
+  },
+  &quot;coworkUserFilesPath&quot;: &quot;C:\\Users\\USER\\Claude&quot;
+}</code></pre>
+</div>
+
+
+<h2>Restart Claude Desktop</h2>
+<p>
+  Fully close Claude Desktop and make sure it is not running in the background.
+  Restart the application and go back to the Developer settings.
+  You should now see the MCP server running for the Kali host.
+</p>
+
+<p class="callout">
+  At this point, you have a local AI pentest assistant that can use your Kali VM to run supported tools through MCP.
+</p>
+
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+
+  <script>
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const code = btn.closest('.code-block').querySelector('code').innerText;
+        await navigator.clipboard.writeText(code);
+        btn.innerText = "Copied!";
+        setTimeout(() => { btn.innerText = "Copy"; }, 1200);
+      });
+    });
+  </script>
+</body>
+</html>
