@@ -1,0 +1,47 @@
+/* style.css
+   Global site styles.
+   Keep your existing navigation, hero, cards and layout here.
+   This file intentionally contains only the global foundation.
+*/
+
+:root{
+  --bg:#05000a;
+  --panel:rgba(9,4,18,.72);
+  --panel-soft:rgba(9,4,18,.52);
+
+  --accent:#8E6BFF;
+  --accent-soft:#CDB7FF;
+
+  --text:#F5F1FF;
+  --text-soft:rgba(245,241,255,.75);
+
+  --border:rgba(180,120,255,.18);
+
+  --radius:22px;
+}
+
+*{box-sizing:border-box}
+
+html{scroll-behavior:smooth}
+
+body{
+    margin:0;
+    background:#05000a;
+    color:var(--text);
+    font-family:Inter,system-ui,sans-serif;
+    overflow-x:hidden;
+}
+
+/* Wallpaper */
+body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    background:url("../img/wallpaper.jpg") center right/cover no-repeat;
+    opacity:.16;
+    z-index:-2;
+}
+
+
+a{color:#d8c3ff;text-decoration:none}
+a:hover{color:#fff}
